@@ -1,0 +1,26 @@
+{
+  "name": "phpunit",
+  "type": "php-file",
+  "url": "src/phpunit.php",
+  "api-version": "1.0.0",
+  "requirements": {
+    "php": {
+      "php": "^7.3 || ^8.0"
+    },
+    "tool": {
+      "phpunit": {
+        "constraints": "^6.0 || ^7.0 || ^8.0 || ^9.0",
+        "sources": [
+          {
+            "type": "github",
+            "repository": "sebastianbergmann/phpunit"
+          },
+          {
+            "type": "phar.io",
+            "url": "https://phar.phpunit.de/phive.xml"
+          }
+        ]
+      }
+    }
+  }
+}
