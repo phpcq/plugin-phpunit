@@ -1,4 +1,7 @@
-vendor
+.cache
+.composer
+.pdepend
 .phpcq
 .phpcq.yaml
 .phpunit.result.cache
+vendor
