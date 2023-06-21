@@ -1,8 +1,8 @@
 {
   "name": "phpcq/plugin-phpunit",
-  "type": "phpcq-plugin",
   "description": "phpunit plugin for phpcq.",
   "license": "MIT",
+  "type": "phpcq-plugin",
   "authors": [
     {
       "name": "Christian Schiffler",
