@@ -18,14 +18,26 @@ jobs:
         include:
           - php: 7.4
             output: '-o github-action -o default'
-            phpcq_install: 'install'
+            phpcq_install: 'update'
           - php: 8.0
-            output: '-o default'
+            output: '-o github-action -o default'
+            phpcq_install: 'update'
+          - php: '8.1'
+            output: '-o github-action -o default'
+            phpcq_install: 'update'
+          - php: '8.2'
+            output: '-o github-action -o default'
+            phpcq_install: 'update'
+          - php: '8.3'
+            output: '-o github-action -o default'
+            phpcq_install: 'update'
+          - php: '8.4'
+            output: '-o github-action -o default'
             phpcq_install: 'update'
 
     steps:
       - name: Pull source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup PHP with PECL extension
         uses: shivammathur/setup-php@v2
@@ -33,7 +45,7 @@ jobs:
           php-version: ${{ matrix.php }}
 
       - name: Cache composer cache directory
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         env:
           cache-name: composer-cache-dir-${{ matrix.php }}
         with:
@@ -44,7 +56,7 @@ jobs:
         run: composer install
 
       - name: Cache vendor directory
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         env:
           cache-name: vendor-${{ matrix.php }}
         with:
@@ -57,7 +69,7 @@ jobs:
         run: ./vendor/bin/phpcq ${{ matrix.phpcq_install }} -v
 
       - name: Cache phpcq directory
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         env:
           cache-name: phpcq-${{ matrix.php }}
         with:
@@ -70,7 +82,7 @@ jobs:
         run: ./vendor/bin/phpcq run -v ${{ matrix.output }}
 
       - name: Upload build directory to artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ success() }} || ${{ failure() }}
         with:
           name: phpcq-builds-php-${{ matrix.php }}

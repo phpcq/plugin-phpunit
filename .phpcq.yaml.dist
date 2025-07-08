@@ -19,9 +19,6 @@ phpcq:
     phpmd:
       version: ^1.0
       signed: false
-      requirements:
-        phpmd:
-          signed: false
     phpcpd:
       version: ^1.1.1
       signed: false
@@ -45,37 +42,30 @@ phpcq:
     # magl@magll.net
     - D2CCAC42F6295E7D
     # PHP_CodeSniffer
-    - 31C7E470E2138192
+    - 97B02DD8E5071466
     # Composer normalize
     - C00543248C87FB13
     # phpmd
-    - 0F9684B8B16B7AB0
-
-  chains:
-    fix:
-      - composer-normalize
-      - phpcbf
-    verify:
-      - composer-require-checker
-      - composer-normalize
-    analyze:
-      - phploc
-      - phpcpd
-      - phpmd
-      - phpcs
-      - psalm
-      - phpunit
-    default:
-      - composer-require-checker
-      - composer-normalize
-      - phploc
-      - phpcpd
-      - phpmd
-      - phpcs
-      - psalm
-      - phpunit
+    - 9093F8B32E4815AA
 
 tasks:
+  fix:
+    - composer-normalize
+    - phpcbf
+  verify:
+    - composer-require-checker
+    - composer-normalize
+  analyze:
+    - phploc
+    - phpcpd
+    - phpmd
+    - phpcs
+    - psalm
+    - phpunit
+  default:
+    - verify
+    - analyze
+
   phpmd:
     config:
       ruleset:
