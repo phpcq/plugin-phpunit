@@ -32,6 +32,8 @@ phpcq:
       version: ^1.0
       signed: false
   trusted-keys:
+    # phpcq
+    - 6659B17090D6C5D3
     # composer-require-checker
     - 033E5F8D801A2F8D
     # sb@sebastian-bergmann.de
