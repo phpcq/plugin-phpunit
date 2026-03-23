@@ -8,11 +8,10 @@ use Phpcq\PluginApi\Version10\Configuration\PluginConfigurationBuilderInterface;
 use Phpcq\PluginApi\Version10\Configuration\PluginConfigurationInterface;
 use Phpcq\PluginApi\Version10\DiagnosticsPluginInterface;
 use Phpcq\PluginApi\Version10\EnvironmentInterface;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @coversNothing
- */
+#[CoversNothing()]
 final class PhpunitPluginTest extends TestCase
 {
     private function instantiate(): DiagnosticsPluginInterface
@@ -27,7 +26,7 @@ final class PhpunitPluginTest extends TestCase
 
     public function testPluginDescribesConfig(): void
     {
-        $configOptionsBuilder = $this->getMockForAbstractClass(PluginConfigurationBuilderInterface::class);
+        $configOptionsBuilder = $this->getMockBuilder(PluginConfigurationBuilderInterface::class)->getMock();
 
         $this->instantiate()->describeConfiguration($configOptionsBuilder);
 
@@ -37,8 +36,8 @@ final class PhpunitPluginTest extends TestCase
 
     public function testPluginCreatesDiagnosticTasks(): void
     {
-        $config = $this->getMockForAbstractClass(PluginConfigurationInterface::class);
-        $environment = $this->getMockForAbstractClass(EnvironmentInterface::class);
+        $config = $this->getMockBuilder(PluginConfigurationInterface::class)->getMock();
+        $environment = $this->getMockBuilder(EnvironmentInterface::class)->getMock();
 
         $this->instantiate()->createDiagnosticTasks($config, $environment);
 
