@@ -29,6 +29,19 @@ return new class implements DiagnosticsPluginInterface {
             )
             ->withDefaultValue([])
             ->isRequired();
+
+        $configOptionsBuilder
+            ->describeBoolOption('coverage', 'Enable coverage collection by switching xdebug to coverage mode.')
+            ->withDefaultValue(false)
+            ->isRequired();
+
+        $configOptionsBuilder
+            ->describeEnumOption(
+                'coverage',
+                'Enable coverage collection by switching xdebug to coverage mode ' .
+                ' and writing in the specified coverage format.'
+            )
+            ->ofStringValues('clover', 'cobertura', 'crap4j'/*, 'html'*/, 'php', 'text', 'xml');
     }
 
     public function createDiagnosticTasks(
@@ -47,33 +60,63 @@ return new class implements DiagnosticsPluginInterface {
         }
 
         $projectRoot = $environment->getProjectConfiguration()->getProjectRootPath();
+
+        $coverageFile = null;
+        $coverage = null;
+        $envVariables = [];
+        if ($config->has('coverage')) {
+            $envVariables['XDEBUG_MODE'] = 'coverage';
+            $coverage = $config->getString('coverage');
+            $args[] = '--coverage-' . $coverage;
+            $args[] = $coverageFile = $environment->getUniqueTempFile($this, 'coverage.tmp');
+        }
+
         yield $environment
             ->getTaskFactory()
             ->buildRunPhar('phpunit', $args)
+            ->withEnv($envVariables)
             ->withWorkingDirectory($projectRoot)
-            ->withOutputTransformer($this->createOutputTransformerFactory($logFile, $projectRoot))
+            ->withOutputTransformer(
+                $this->createOutputTransformerFactory($logFile, $coverage, $coverageFile, $projectRoot)
+            )
             ->build();
     }
 
     private function createOutputTransformerFactory(
         string $logFile,
+        ?string $coverage,
+        ?string $coverageFile,
         string $rootDir
     ): OutputTransformerFactoryInterface {
-        return new class ($logFile, $rootDir) implements OutputTransformerFactoryInterface {
+        return new class ($logFile, $coverage, $coverageFile, $rootDir) implements OutputTransformerFactoryInterface {
             private $logFile;
+            private $coverage;
+            private $coverageFile;
             private $rootDir;
 
-            public function __construct(string $logFile, string $rootDir)
+            public function __construct(string $logFile, ?string $coverage, ?string $coverageFile, string $rootDir)
             {
-                $this->logFile = $logFile;
-                $this->rootDir = $rootDir;
+                $this->logFile      = $logFile;
+                $this->coverage     = $coverage;
+                $this->coverageFile = $coverageFile;
+                $this->rootDir      = $rootDir;
             }
 
             public function createFor(TaskReportInterface $report): OutputTransformerInterface
             {
-                return new class ($this->logFile, $this->rootDir, $report) implements OutputTransformerInterface {
+                return new class (
+                    $this->logFile,
+                    $this->coverage,
+                    $this->coverageFile,
+                    $this->rootDir,
+                    $report
+                ) implements OutputTransformerInterface {
                     /** @var string */
                     private $logFile;
+                    /** @var string|null */
+                    private $coverage;
+                    /** @var string|null */
+                    private $coverageFile;
                     /** @var string */
                     private $rootDir;
                     /** @var TaskReportInterface */
@@ -83,13 +126,20 @@ return new class implements DiagnosticsPluginInterface {
                     /** @var BufferedLineReader */
                     private $stdErr;
 
-                    public function __construct(string $logFile, string $rootDir, TaskReportInterface $report)
-                    {
-                        $this->logFile = $logFile;
-                        $this->rootDir = $rootDir;
-                        $this->report  = $report;
-                        $this->stdOut  = BufferedLineReader::create();
-                        $this->stdErr  = BufferedLineReader::create();
+                    public function __construct(
+                        string $logFile,
+                        ?string $coverage,
+                        ?string $coverageFile,
+                        string $rootDir,
+                        TaskReportInterface $report
+                    ) {
+                        $this->logFile      = $logFile;
+                        $this->coverage     = $coverage;
+                        $this->coverageFile = $coverageFile;
+                        $this->rootDir      = $rootDir;
+                        $this->report       = $report;
+                        $this->stdOut       = BufferedLineReader::create();
+                        $this->stdErr       = BufferedLineReader::create();
                     }
 
                     public function write(string $data, int $channel): void
@@ -103,6 +153,29 @@ return new class implements DiagnosticsPluginInterface {
 
                     public function finish(int $exitCode): void
                     {
+                        switch ($this->coverage) {
+                            case 'clover':
+                            case 'cobertura':
+                            case 'crap4j':
+                            case 'xml':
+                                $this->report
+                                    ->addAttachment('coverage-' . $this->coverage . '.xml')
+                                    ->fromFile($this->coverageFile)
+                                    ->end();
+                                break;
+                            // FIXME: this is a directory, we'll need to use a finder then or what to do?
+                            // case 'html':
+                            //     $this->report->addAttachment('coverage.php')->fromDirectory($this->logFile)->end();
+                            //     break;
+                            case 'php':
+                                $this->report->addAttachment('coverage.php')->fromFile($this->logFile)->end();
+                                break;
+                            case 'text':
+                                $this->report->addAttachment('coverage.txt')->fromFile($this->logFile)->end();
+                                break;
+                            default:
+                                // Do nothing.
+                        }
                         try {
                             JUnitReportAppender::appendFileTo($this->report, $this->logFile, $this->rootDir);
                             $this->report->addAttachment('junit-log.xml')->fromFile($this->logFile)->end();
